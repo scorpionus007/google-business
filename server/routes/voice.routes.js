@@ -7,12 +7,14 @@ const MarketingPost = require('../models/MarketingPost'); // Make sure to requir
 const auth = require('../middleware/authMiddleware');
 
 router.post('/process', auth, async (req, res) => {
-    const { transcript } = req.body;
+    // ...
+    const { transcript, language } = req.body;
 
     if (!transcript) return res.status(400).json({ error: 'No transcript provided' });
 
-    // 1. Get Intent from Gemini
-    const aiResponse = await parseVoiceIntent(transcript);
+    // 1. Get Intent from Gemini (pass language context)
+    const aiResponse = await parseVoiceIntent(transcript, req.user.businessContext, language);
+    // ...
     console.log("AI Parsed Intent:", aiResponse);
 
     const { intent, entities } = aiResponse;

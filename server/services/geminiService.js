@@ -29,11 +29,17 @@ async function getTextResponse(modelId, prompt) {
     }
 }
 
-async function parseVoiceIntent(transcript, businessContext) {
+async function parseVoiceIntent(transcript, businessContext, language = 'en-US') {
     try {
+        const isHindi = language.startsWith('hi');
         const contextStr = businessContext ? `This is for a ${businessContext} business.` : "This is for a generic small business.";
+        const langInstruction = isHindi
+            ? "The user is speaking in Hindi (or Hinglish). Extract intents accurately. If the response needs to be spoken back, reply in natural Hindi (Devanagari script not required, Hinglish/Romanized is okay if easier for TTS, but standard Hindi preferred)."
+            : "The user is speaking in English.";
+
         const prompt = `
     You are an AI assistant for an MSME business management app. ${contextStr}
+    ${langInstruction}
     Analyze the following user voice transcript and extract the intent and entities.
     Return ONLY a JSON object. Do not include markdown formatting.
 
@@ -41,24 +47,20 @@ async function parseVoiceIntent(transcript, businessContext) {
     - ADD_PRODUCT: User wants to add a product/service to inventory. Entities: name, price, stock, category.
        * Rule: If price is missing, use 0. If stock is missing, use 1.
        * Rule: Infer category from the item name if not specified (e.g. "iPhone" -> "Electronics").
+       * Hindi Example: "50 bottle pani add karo" -> { "name": "Pani (Water)", "stock": 50, "category": "Beverage" }
     - CHECK_STOCK: User asks about stock level or availability. Entities: product_name.
        * Rule: Handle queries like "Do we have X?" or "How many X are left?".
        * Rule: If "product_name" is very generic (like "product", "item"), return "UNKNOWN_PRODUCT".
     - CREATE_BILL: User wants to make a bill/invoice. Entities: items (array of {name, qty}).
     - MARKETING_TEXT: User wants to write an ad/post. Entities: topic, platform, type.
+       * Note: If input is Hindi, the generated content should be in Hindi.
     - MARKETING_IMAGE: User wants an image. Entities: description.
     - BUILD_WEBSITE: User wants to create/generate a website. Entities: description (business details).
     - REVIEW_REPLY: User wants to reply to a review. Entities: review_text, sentiment.
-    - OFF_TOPIC: User talks about non-business topics. Entities: response_text.
-    - AMBIGUOUS: User's intent is unclear or input is too short (e.g., just "product"). status: "ask_clarification".
+    - OFF_TOPIC: User talks about non-business topics. Entities: response_text (In Hindi if input is Hindi).
+    - AMBIGUOUS: User's intent is unclear details. status: "ask_clarification" (Response in Hindi if input is Hindi).
 
     Transcript: "${transcript}"
-
-    Examples:
-    - "Add 50 Bottles of Coke" -> { "intent": "ADD_PRODUCT", "entities": { "name": "Coke", "stock": 50, "category": "Beverage" } }
-    - "Do we have Rice?" -> { "intent": "CHECK_STOCK", "entities": { "product_name": "Rice" } }
-    - "Make a website for my bakery" -> { "intent": "BUILD_WEBSITE", "entities": { "description": "bakery" } }
-    - "product" -> { "intent": "AMBIGUOUS", "entities": { "response_text": "Could you be more specific? Do you want to add a product or check stock?" } }
 
     JSON Output Format:
     {
@@ -67,17 +69,11 @@ async function parseVoiceIntent(transcript, businessContext) {
     }
     `;
 
-        // Use "gemini-2.5-flash" for speed and reasoning
-        // console.log("Sending transcript to Gemini:", transcript);
         const text = await getTextResponse("gemini-2.5-flash", prompt);
-        // console.log("Raw Gemini Response text:", text);
-
-        // Clean markdown
         const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(jsonStr);
     } catch (error) {
         console.error("Gemini Intent Parse Error:", error);
-        console.error("Raw Text likely caused error");
         return { intent: "UNKNOWN", error: error.message };
     }
 }
