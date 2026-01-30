@@ -13,14 +13,16 @@ export const AuthProvider = ({ children }) => {
         }
     }, []);
 
-    const login = (userData) => {
+    const login = (userData, token) => {
         setUser(userData);
         localStorage.setItem('voicebox_user', JSON.stringify(userData));
+        if (token) localStorage.setItem('voicebox_token', token);
     };
 
     const logout = () => {
         setUser(null);
         localStorage.removeItem('voicebox_user');
+        localStorage.removeItem('voicebox_token');
     };
 
     return (

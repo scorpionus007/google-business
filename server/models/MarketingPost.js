@@ -7,6 +7,10 @@ const MarketingPost = sequelize.define('MarketingPost', {
         autoIncrement: true,
         primaryKey: true
     },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     type: {
         type: DataTypes.STRING, // 'image_ad', 'text_post', 'review_reply'
     },

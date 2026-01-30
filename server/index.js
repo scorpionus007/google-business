@@ -11,10 +11,25 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/voice', require('./routes/voice.routes'));
-app.use('/api/inventory', require('./routes/inventory.routes'));
-app.use('/api/marketing', require('./routes/marketing.routes'));
+const authRoutes = require('./routes/auth.routes');
+const voiceRoutes = require('./routes/voice.routes');
+const inventoryRoutes = require('./routes/inventory.routes');
+const marketingRoutes = require('./routes/marketing.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const googleRoutes = require('./routes/google.routes');
+const whatsappRoutes = require('./routes/whatsapp.routes');
+
+app.use('/api/auth', authRoutes);
+app.use('/api/voice', voiceRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/marketing', marketingRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/google', googleRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/google', googleRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/website', require('./routes/website.routes'));
+app.use('/api/billing', require('./routes/billing.routes'));
 
 // Test Route
 app.get('/', (req, res) => {
@@ -26,8 +41,12 @@ const startServer = async () => {
     try {
         await sequelize.authenticate();
         console.log('Database connected...');
+
+        // Load Associations
+        require('./models/associations');
+
         // Sync models - using { force: false } to not drop tables
-        await sequelize.sync({ force: true });
+        await sequelize.sync({ alter: true });
 
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);

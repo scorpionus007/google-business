@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
@@ -12,8 +12,8 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-            login(res.data.user);
+            const res = await api.post('/auth/login', formData);
+            login(res.data.user, res.data.token);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
@@ -21,38 +21,52 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900">
-            <div className="glass-dark p-8 rounded-2xl w-full max-w-md border border-white/10">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mb-6 text-center">
-                    BizBox Login
-                </h2>
-                {error && <p className="text-red-400 text-center mb-4">{error}</p>}
-                <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="min-h-screen flex items-center justify-center bg-[#F0F2F5]">
+            <div className="bg-white p-10 rounded-2xl w-full max-w-md border border-[#dadce0] shadow-sm">
+                <div className="text-center mb-8">
+                    <div className="w-10 h-10 bg-[#1a73e8] rounded-lg flex items-center justify-center text-white font-bold mx-auto mb-4">B</div>
+                    <h2 className="text-2xl font-normal text-[#202124]">
+                        Sign in to BizBox
+                    </h2>
+                    <p className="text-[#5f6368] mt-2">Manage your business with AI</p>
+                </div>
+
+                {error && <div className="bg-[#fce8e6] text-[#c5221f] text-sm p-3 rounded-lg mb-6 text-center">{error}</div>}
+
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Username</label>
                         <input
                             type="text"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
                             value={formData.username}
                             onChange={e => setFormData({ ...formData, username: e.target.value })}
+                            placeholder="Username"
                         />
                     </div>
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Password</label>
                         <input
                             type="password"
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-blue-500 outline-none"
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
                             value={formData.password}
                             onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            placeholder="Password"
                         />
                     </div>
-                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-bold transition-all">
-                        Login
+
+                    <div className="flex justify-end">
+                        <Link to="/forgot-password" className="text-sm text-[#1a73e8] hover:text-[#174ea6] font-medium">Forgot password?</Link>
+                    </div>
+
+                    <button type="submit" className="google-btn w-full justify-center">
+                        Next
                     </button>
                 </form>
-                <p className="text-center text-gray-400 mt-4 text-sm">
-                    New here? <Link to="/register" className="text-blue-400 hover:text-blue-300">Create Account</Link>
-                </p>
+
+                <div className="mt-8 text-center">
+                    <Link to="/register" className="text-sm text-[#1a73e8] hover:text-[#174ea6] font-medium">
+                        Create account
+                    </Link>
+                </div>
             </div>
         </div>
     );

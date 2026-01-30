@@ -4,16 +4,43 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900 font-sans;
+    @apply bg-[#F0F2F5] text-[#202124] font-sans;
   }
 }
 
 @layer utilities {
-  .glass-check {
-    @apply bg-white/30 backdrop-blur-md border border-white/20 shadow-lg;
+  .google-card {
+    @apply bg-white rounded-2xl shadow-sm border border-gray-200;
   }
-  
-  .glass-dark {
-    @apply bg-black/30 backdrop-blur-md border border-white/10 shadow-lg text-white;
+
+  .google-btn {
+    @apply bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium rounded-full px-6 py-2 transition-colors shadow-sm;
+  }
+
+  .google-input {
+    @apply bg-[#F1F3F4] border-transparent focus:bg-white focus:border-[#1a73e8] focus:ring-2 focus:ring-[#1a73e8]/20 rounded-lg px-4 py-3 transition-all outline-none;
+  }
+
+  .google-chip {
+    @apply px-4 py-1.5 rounded-lg text-sm font-medium border transition-colors;
+  }
+
+  /* Custom Scrollbar for Chrome/Safari/Edge */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #dadce0;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #bdc1c6;
   }
 }

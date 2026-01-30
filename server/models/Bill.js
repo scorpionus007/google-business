@@ -7,6 +7,10 @@ const Bill = sequelize.define('Bill', {
         autoIncrement: true,
         primaryKey: true
     },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false
+    },
     customerName: {
         type: DataTypes.STRING,
     },

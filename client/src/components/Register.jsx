@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
 
 const CATEGORIES = [
     "Restaurant", "Hotel", "Hospital / Clinic", "Pathology Lab", "Retail Shop (General)",
@@ -21,62 +21,73 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/register', formData);
-            login(res.data.user);
+            const res = await api.post('/auth/register', formData);
+            login(res.data.user, res.data.token);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.error || 'Registration failed');
+            setError(err.response?.data?.error || err.response?.data?.msg || 'Registration failed');
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-900 py-10">
-            <div className="glass-dark p-8 rounded-2xl w-full max-w-md border border-white/10">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-6 text-center">
-                    Start Your Automation
-                </h2>
-                {error && <p className="text-red-400 text-center mb-4">{error}</p>}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-1">Username</label>
-                        <input type="text" required
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-purple-500 outline-none"
+        <div className="min-h-screen flex items-center justify-center bg-[#F0F2F5] py-10">
+            <div className="bg-white p-10 rounded-2xl w-full max-w-md border border-[#dadce0] shadow-sm">
+                <div className="text-center mb-8">
+                    <h2 className="text-2xl font-normal text-[#202124]">
+                        Create your BizBox Account
+                    </h2>
+                    <p className="text-[#5f6368] mt-2">Start automating your business today</p>
+                </div>
+
+                {error && <div className="bg-[#fce8e6] text-[#c5221f] text-sm p-3 rounded-lg mb-6 text-center">{error}</div>}
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                        <input
+                            type="text" required
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
+                            placeholder="Username"
                             onChange={e => setFormData({ ...formData, username: e.target.value })}
                         />
-                    </div>
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-1">Password</label>
-                        <input type="password" required
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-purple-500 outline-none"
+                        <input
+                            type="password" required
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
+                            placeholder="Password"
                             onChange={e => setFormData({ ...formData, password: e.target.value })}
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Business Name</label>
                         <input type="text" required
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-purple-500 outline-none"
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
+                            placeholder="Business Name"
                             onChange={e => setFormData({ ...formData, businessName: e.target.value })}
                         />
                     </div>
+
                     <div>
-                        <label className="block text-sm text-gray-400 mb-1">Category</label>
+                        <label className="block text-xs font-medium text-[#5f6368] mb-1 ml-1">Business Category</label>
                         <select
-                            className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-white focus:border-purple-500 outline-none"
+                            className="google-input w-full border border-[#dadce0] bg-white focus:border-[#1a73e8] focus:ring-0"
                             value={formData.category}
                             onChange={e => setFormData({ ...formData, category: e.target.value })}
                         >
                             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">We will customize the app for your {formData.category}.</p>
+                        <p className="text-xs text-[#5f6368] mt-1 ml-1">We'll customize the app for your {formData.category}.</p>
                     </div>
 
-                    <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-3 rounded-xl font-bold transition-all mt-4">
+                    <button type="submit" className="google-btn w-full justify-center mt-4">
                         Create Account
                     </button>
                 </form>
-                <p className="text-center text-gray-400 mt-4 text-sm">
-                    Already have an account? <Link to="/login" className="text-purple-400 hover:text-purple-300">Login</Link>
-                </p>
+
+                <div className="mt-8 text-center">
+                    <span className="text-sm text-[#5f6368]">Already have an account? </span>
+                    <Link to="/login" className="text-sm text-[#1a73e8] hover:text-[#174ea6] font-medium">
+                        Sign in instead
+                    </Link>
+                </div>
             </div>
         </div>
     );

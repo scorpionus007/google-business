@@ -1,5 +1,6 @@
 import React from 'react';
 import { FileText, Download, Printer } from 'lucide-react';
+import api from '../services/api';
 
 const Billing = ({ lastAction }) => {
     return (
@@ -34,12 +35,28 @@ const Billing = ({ lastAction }) => {
                         <span>₹{lastAction.entities?.total || '0.00'}</span>
                     </div>
 
-                    <div className="mt-6 flex gap-3">
-                        <button className="flex-1 py-2 bg-slate-900 text-white rounded-lg flex items-center justify-center gap-2 hover:bg-slate-800 text-sm">
-                            <Printer size={16} /> Print
-                        </button>
-                        <button className="flex-1 py-2 border border-slate-200 rounded-lg flex items-center justify-center gap-2 hover:bg-slate-50 text-sm">
-                            <Download size={16} /> Download PDF
+                    <div className="flex gap-2 mt-4">
+                        <button onClick={() => window.print()} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg flex items-center justify-center gap-2"><Printer size={16} /> Print</button>
+                        <button onClick={() => alert("Downloading PDF... (Check console for mock data)")} className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg flex items-center justify-center gap-2"><Download size={16} /> Download PDF</button>
+                        <button
+                            onClick={async () => {
+                                const phone = prompt("Enter customer phone:");
+                                if (phone) {
+                                    try {
+                                        await api.post('/whatsapp/send-bill', {
+                                            phone,
+                                            billDetails: { customerName: "Valued Customer", amount: lastAction.entities?.total || 0 }
+                                        });
+                                        alert("Bill sent to WhatsApp!");
+                                    } catch (err) {
+                                        console.error(err);
+                                        alert("Failed to send bill.");
+                                    }
+                                }
+                            }}
+                            className="flex-1 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg flex items-center justify-center gap-2"
+                        >
+                            WhatsApp
                         </button>
                     </div>
                 </div>

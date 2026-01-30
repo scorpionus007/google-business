@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { parseVoiceIntent, generateMarketingText } = require('../services/geminiService');
+const { parseVoiceIntent, generateMarketingText, generateImage } = require('../services/geminiService');
 const Product = require('../models/Product');
 const Bill = require('../models/Bill');
+const MarketingPost = require('../models/MarketingPost'); // Make sure to require this
+const auth = require('../middleware/authMiddleware');
 
-router.post('/process', async (req, res) => {
+router.post('/process', auth, async (req, res) => {
     const { transcript } = req.body;
 
     if (!transcript) return res.status(400).json({ error: 'No transcript provided' });
@@ -32,10 +34,15 @@ router.post('/process', async (req, res) => {
                     price: price || 0,
                     stock: stock || 1, // Default stock to 1 if not provided
                     category: category || 'General', // Fallback to 'General'
-                    imageUrl: ''
+                    imageUrl: '',
+                    userId: req.user.id
                 });
                 responseMessage = `Added ${newProduct.name} to inventory.`;
                 result = { message: responseMessage, data: newProduct };
+                break;
+
+            case 'AMBIGUOUS':
+                responseMessage = aiResponse.entities.response_text || "Could you be more specific?";
                 break;
 
             case 'OFF_TOPIC':
@@ -43,8 +50,8 @@ router.post('/process', async (req, res) => {
                 break;
 
             case 'CHECK_STOCK':
-                // Fuzzy search or exact
-                const product = await Product.findOne({ where: { name: entities.product_name } });
+                // Fuzzy search or exact. Filtering by userId
+                const product = await Product.findOne({ where: { name: entities.product_name, userId: req.user.id } });
                 if (product) {
                     result = { message: `${product.name} has ${product.stock} items in stock.` };
                 } else {
@@ -54,29 +61,72 @@ router.post('/process', async (req, res) => {
 
             case 'MARKETING_TEXT':
                 const adCopy = await generateMarketingText(entities.topic, entities.platform || 'General', entities.type || 'Offer');
+                // Save to DB (Content field is text-only for now)
+                await MarketingPost.create({
+                    type: 'text_post',
+                    content: adCopy.text,
+                    status: 'draft',
+                    userId: req.user.id
+                });
+                // Return full rich object (text + html)
                 result = { message: "Generated marketing content.", data: adCopy, type: 'marketing_text' };
+                break;
+
+            case 'MARKETING_IMAGE':
+                const imgDescription = entities.description || "Product image";
+                const imgUrl = await generateImage(imgDescription);
+                await MarketingPost.create({
+                    type: 'image_ad',
+                    imageUrl: imgUrl,
+                    status: 'draft',
+                    userId: req.user.id
+                });
+                result = { message: "Generated marketing image.", data: imgUrl, type: 'marketing_image' };
                 break;
 
             case 'CREATE_BILL':
                 // entities.items might be [{name: 'x', qty: 2}]
-                // Real app would fetch prices from DB. Here we mock or trust entities if price missing
                 const billItems = entities.items || [];
                 let total = 0;
-                // Simple mock calculation
-                billItems.forEach(item => {
-                    if (!item.price) item.price = 10; // Default mock price
+                let stockUpdates = [];
+
+                for (const item of billItems) {
+                    // Try to find product to get price and manage stock
+                    const product = await Product.findOne({ where: { name: item.name, userId: req.user.id } });
+
+                    if (product) {
+                        item.price = product.price; // Use real price
+
+                        // Check Stock
+                        if (product.stock < (item.qty || 1)) {
+                            // Option: Warn but allow? Or Block? Let's allow and warn in message
+                            // For this MVP, we just decrement into negative to show deficit
+                        }
+
+                        // Prepare stock update
+                        stockUpdates.push(product.decrement('stock', { by: item.qty || 1 }));
+                    } else {
+                        if (!item.price) item.price = 10; // Default mock price if not found
+                    }
+
                     total += item.price * (item.qty || 1);
-                });
+                }
+
+                // Execute all stock updates
+                await Promise.all(stockUpdates);
 
                 const newBill = await Bill.create({
                     customerName: "Walk-in Customer",
                     items: billItems,
                     totalAmount: total,
-                    pdfUrl: "generated_bill_101.pdf" // Placeholder
+                    pdfUrl: "generated_bill_101.pdf", // Placeholder
+                    userId: req.user.id
                 });
 
+                const stockWarning = stockUpdates.length < billItems.length ? " (Some items not in inventory)" : "";
+
                 result = {
-                    message: `Created bill for ${billItems.length} items. Total is ${total}.`,
+                    message: `Created bill for ${billItems.length} items. Total is ₹${total}.${stockWarning}`,
                     data: newBill,
                     entities: { ...entities, total } // Pass back total for UI
                 };
